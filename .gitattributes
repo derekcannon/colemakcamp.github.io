@@ -1,0 +1,9 @@
+# Preserve the repository's existing line endings in Git. See .editorconfig for
+# the editing convention used by source and generated files.
+* -text
+
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.wav binary

@@ -1,0 +1,7 @@
+root = true
+
+[*.{html,md,js,json,scss,webmanifest}]
+end_of_line = crlf
+
+[*.{css,map}]
+end_of_line = lf
