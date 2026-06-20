@@ -408,7 +408,8 @@ let preferenceButton = document.querySelector('.settings'),
     punctuationModeButton = document.querySelector('.punctuationModeButton'),
     showCheatsheetButton = document.querySelector('.showCheatsheetButton'),
     playSoundOnClickButton = document.querySelector('.playSoundOnClick'),
-    playSoundOnErrorButton = document.querySelector('.playSoundOnError');
+    playSoundOnErrorButton = document.querySelector('.playSoundOnError'),
+    resetAllButton = document.querySelector('.resetAllButton');
 
 start();
 init();
@@ -821,6 +822,14 @@ playSoundOnErrorButton.addEventListener('click', ()=> {
     playSoundOnError = !playSoundOnError;
     localStorage.setItem('playSoundOnError', playSoundOnError);
     navInit();
+});
+
+resetAllButton.addEventListener('click', ()=> {
+    localStorage.clear();
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.hash = '';
+    window.location.replace(url);
 });
 
 /*______________________preference menu______________________*/
