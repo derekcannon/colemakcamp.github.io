@@ -1,5 +1,37 @@
 /* Set global variables */
 
+function isValidLayout(value) {
+    return Object.prototype.hasOwnProperty.call(layoutMaps, value) &&
+        Object.prototype.hasOwnProperty.call(levelDictionaries, value);
+}
+
+function getURLLayout() {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get('layout');
+
+    return isValidLayout(value) ? value : '';
+}
+
+function setURLLayout(value) {
+    if (!isValidLayout(value) || !window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('layout', value);
+    window.history.replaceState({}, '', url);
+}
+
+function getInitialLayout() {
+    const urlLayout = getURLLayout();
+
+    if (urlLayout) {
+        return urlLayout;
+    }
+
+    return localStorage.getItem('currentLayout') || 'colemak';
+}
+
 // the string of text that shows the words for the user to type
 let prompt = document.querySelector('.prompt'),
     wordChain = document.querySelector('#wordChain'),
@@ -46,7 +78,7 @@ let promptOffset = 0,
     answerString = '', // A string representation of the words for the current test. After a correct word is typed, it is removed from the beginning of answerString. By the end of the test, there should be no words in answerString
     keyboardMap = layoutMaps['colemak'],
     letterDictionary = levelDictionaries['colemak'],
-    currentLayout = localStorage.getItem('currentLayout') || 'colemak',
+    currentLayout = getInitialLayout(),
     currentKeyboard = localStorage.getItem('currentKeyboard') || 'ansi',
     shiftDown = false, // tracks whether the shift key is currently being pushed
     fullSentenceMode = false, // if true, all prompts will be replace with sentences
@@ -119,6 +151,7 @@ function start() {
 
     //layout.value = currentLayout;
     layout.setAttribute('data-value', currentLayout);
+    setURLLayout(currentLayout);
     //keyboard.value = currentKeyboard;
     keyboard.setAttribute('data-value', currentKeyboard);
 
@@ -763,6 +796,7 @@ function changeLayout(value) {
     currentLayout = value;
     layout.setAttribute('data-value', value);
     localStorage.setItem('currentLayout', currentLayout);
+    setURLLayout(currentLayout);
     updateLayoutUI();
     // reset everything
     init();
