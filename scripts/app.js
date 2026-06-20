@@ -386,7 +386,7 @@ let promptOffset = 0,
     idCount = 0,
     answerWordArray = [];
 
-let specialKeys = ["Pause", "ScrollLock", "Insert", "PageUp", "PageDown", "Delete", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Escape", "Tab", "CapsLock", "Control", "Alt", "ContextMenu", "Home", "ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "NumLock", "Backspace", "Shift", " ", "Enter", "OS" ], // list of all keys we typically want to ignore
+let specialKeys = ["Pause", "ScrollLock", "Insert", "PageUp", "PageDown", "Delete", "End", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "Escape", "Tab", "CapsLock", "Control", "Alt", "Meta", "ContextMenu", "Home", "ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown", "NumLock", "Backspace", "Shift", " ", "Enter", "OS" ], // list of all keys we typically want to ignore
     punctuation = localStorage.getItem('punctuation') || '', // this contains punctuation to include in our test sets. Set to empty at first
     requiredLetters = '', //levelDictionaries[currentLayout]['lvl'+currentLevel]+punctuation;; // keeps track of letters that still need to be used in the current level
     initialCustomKeyboardState = '', // saves a temporary copy of a keyboard layout that a user can return to by discarding changes
@@ -1272,6 +1272,7 @@ customUIKeyInput.addEventListener('keydown', (e)=> {
     // or delete, left or right arrows, update dom element and key mapping value
     if (/*e.keyCode != 16*/ e.key !== "Shift" &&
         /*e.keyCode != 17*/ e.key !== "Control" &&
+        /*![91, 92, 93].includes(e.keyCode)*/ e.key !== "Meta" &&
         /*e.keyCode != 27*/ e.key !== "Escape" &&
         /*e.keyCode != 46*/ e.key !== "Delete" &&
         /*e.keyCode != 32*/ e.key !== " " &&
