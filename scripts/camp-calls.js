@@ -166,6 +166,10 @@ function storeCustomLayout() {
 
 // Automatically restore custom layout if available in localstorage
 (function() {
+    if (hasURLCustomLayout()) {
+        return;
+    }
+
     if (!localStorage.customLevelDictionary || !localStorage.customLayoutMap) {
         return;
     }

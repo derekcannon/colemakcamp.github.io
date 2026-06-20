@@ -29,6 +29,10 @@ function getInitialLayout() {
         return urlLayout;
     }
 
+    if (customLayoutLoadedFromURL) {
+        return 'custom';
+    }
+
     return localStorage.getItem('currentLayout') || 'colemak';
 }
 
@@ -58,6 +62,13 @@ function getInitialKeyboard() {
 
     if (urlKeyboard) {
         return urlKeyboard;
+    }
+
+    const customPayload = getURLCustomLayoutPayload();
+    const customKeyboard = customPayload ? (customPayload.kb || customPayload.keyboard) : '';
+
+    if (isValidKeyboard(customKeyboard)) {
+        return customKeyboard;
     }
 
     return localStorage.getItem('currentKeyboard') || 'ansi';
@@ -120,6 +131,193 @@ function setKeyRemapping(value, persist) {
         localStorage.setItem('keyRemapping', value);
     }
 }
+
+const customLayoutURLKeys = [
+    'Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7',
+    'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'KeyL1', 'KeyL2', 'KeyL3',
+    'KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP',
+    'KeyR1', 'BracketLeft', 'BracketRight', 'Backslash', 'IntlBackslash', 'KeyA',
+    'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon',
+    'Quote', 'KeyR2', 'KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM',
+    'Comma', 'Period', 'Slash', 'KeyR3'
+];
+
+let urlCustomLayoutPayload;
+
+function encodeBase64URL(value) {
+    return btoa(unescape(encodeURIComponent(value))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function decodeBase64URL(value) {
+    const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
+
+    return decodeURIComponent(escape(atob(padded)));
+}
+
+function getURLCustomLayoutPayload() {
+    if (urlCustomLayoutPayload !== undefined) {
+        return urlCustomLayoutPayload;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get('custom');
+
+    if (!value) {
+        urlCustomLayoutPayload = null;
+        return null;
+    }
+
+    try {
+        const encoded = value.startsWith('v1:') ? value.slice(3) : value;
+        const payload = JSON.parse(decodeBase64URL(encoded));
+        urlCustomLayoutPayload = isValidCustomLayoutPayload(payload) ? payload : null;
+    } catch {
+        urlCustomLayoutPayload = null;
+    }
+
+    return urlCustomLayoutPayload;
+}
+
+function isValidCustomLayoutPayload(payload) {
+    if (!payload || payload.v !== 1) {
+        return false;
+    }
+
+    const keys = payload.k || payload.keys;
+
+    return Array.isArray(keys);
+}
+
+function normalizeCustomKeyValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return ' ';
+    }
+
+    return String(value);
+}
+
+function getAssignedCustomLetters(customMap) {
+    const letters = [];
+
+    for (const key of customLayoutURLKeys) {
+        const value = customMap[key];
+
+        if (!value || value === ' ') {
+            continue;
+        }
+
+        for (const character of Array.from(value)) {
+            if (!letters.includes(character)) {
+                letters.push(character);
+            }
+        }
+    }
+
+    return letters.join('');
+}
+
+function createCustomLevelsFromLetters(letters) {
+    return {
+        lvl1: letters,
+        lvl2: '',
+        lvl3: '',
+        lvl4: '',
+        lvl5: '',
+        lvl6: '',
+        lvl7: letters
+    };
+}
+
+function createCustomLevelsFromPayload(payload, letters) {
+    const levels = payload.l || payload.levels;
+
+    if (!Array.isArray(levels)) {
+        return createCustomLevelsFromLetters(letters);
+    }
+
+    const customLevels = createCustomLevelsFromLetters(letters);
+
+    for (let index = 0; index < Math.min(levels.length, 7); index++) {
+        customLevels['lvl' + (index + 1)] = String(levels[index] || '');
+    }
+
+    if (!customLevels.lvl7) {
+        customLevels.lvl7 = letters;
+    }
+
+    return customLevels;
+}
+
+function applyCustomLayoutPayload(payload) {
+    const keys = payload.k || payload.keys;
+    const customMap = Object.assign({}, layoutMaps.custom);
+
+    customMap.shiftLayer = 'default';
+
+    for (let index = 0; index < customLayoutURLKeys.length; index++) {
+        customMap[customLayoutURLKeys[index]] = normalizeCustomKeyValue(keys[index]);
+    }
+
+    const letters = getAssignedCustomLetters(customMap);
+    layoutMaps.custom = customMap;
+    levelDictionaries.custom = createCustomLevelsFromPayload(payload, letters);
+}
+
+function applyURLCustomLayout() {
+    const payload = getURLCustomLayoutPayload();
+
+    if (!payload) {
+        return false;
+    }
+
+    applyCustomLayoutPayload(payload);
+
+    return true;
+}
+
+function hasURLCustomLayout() {
+    return customLayoutLoadedFromURL;
+}
+
+function createCustomLayoutPayload(keyboardValue) {
+    const levels = [];
+
+    for (let index = 1; index <= 7; index++) {
+        levels.push(levelDictionaries.custom['lvl' + index] || '');
+    }
+
+    return {
+        v: 1,
+        kb: isValidKeyboard(keyboardValue) ? keyboardValue : currentKeyboard,
+        k: customLayoutURLKeys.map((key) => layoutMaps.custom[key] === ' ' ? '' : (layoutMaps.custom[key] || '')),
+        l: levels
+    };
+}
+
+function setURLCustomLayout() {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const payload = createCustomLayoutPayload(currentKeyboard);
+    const url = new URL(window.location.href);
+    url.searchParams.set('layout', 'custom');
+    url.searchParams.set('keyboard', payload.kb);
+    url.searchParams.set('custom', 'v1:' + encodeBase64URL(JSON.stringify(payload)));
+    window.history.replaceState({}, '', url);
+}
+
+function clearURLCustomLayout() {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('custom');
+    window.history.replaceState({}, '', url);
+}
+
+const customLayoutLoadedFromURL = applyURLCustomLayout();
 
 // the string of text that shows the words for the user to type
 let prompt = document.querySelector('.prompt'),
@@ -888,6 +1086,11 @@ function changeLayout(value) {
     localStorage.setItem('currentLayout', currentLayout);
     setURLLayout(currentLayout);
     updateLayoutUI();
+    if (currentLayout === 'custom') {
+        setURLCustomLayout();
+    } else {
+        clearURLCustomLayout();
+    }
     // reset everything
     init();
     updateSelectors();
@@ -899,6 +1102,9 @@ function changeKeyboard(value) {
     keyboard.setAttribute('data-value', value);
     localStorage.setItem('currentKeyboard', currentKeyboard);
     setURLKeyboard(currentKeyboard);
+    if (currentLayout === 'custom') {
+        setURLCustomLayout();
+    }
     updateLayoutUI();
     // reset everything
     init();
@@ -913,7 +1119,7 @@ openUIButton.addEventListener('click', ()=> {
 // called whenever a user opens the custom editor. Sets correct displays and saves an initial state
 // of the keyboard to refer back to if the user wants to discard changes
 function startCustomKeyboardEditing(user) {
-    if (!localStorage.customLevelDictionary || !localStorage.customLayoutMap) {
+    if (customLayoutLoadedFromURL || !localStorage.customLevelDictionary || !localStorage.customLayoutMap) {
         initialCustomKeyboardState = Object.assign({}, layoutMaps['custom']);
         initialCustomLevelsState = Object.assign({}, levelDictionaries['custom']);
     } else {
@@ -925,7 +1131,7 @@ function startCustomKeyboardEditing(user) {
     loadCustomLayout(initialCustomKeyboardState);
     loadCustomLevels(initialCustomLevelsState);
 
-    if (user !== true && localStorage.customLevelDictionary && localStorage.customLayoutMap) {
+    if (user !== true && (customLayoutLoadedFromURL || (localStorage.customLevelDictionary && localStorage.customLayoutMap))) {
         return;
     }
 
@@ -956,6 +1162,7 @@ function selectInputKey(k){
 // listener for the custom layout ui 'done' button
 saveButton.addEventListener('click', ()=> {
     storeCustomLayout();
+    setURLCustomLayout();
     //customInput.style.transform = 'scaleX(0)';
     customInput.classList.remove('show');
     setTimeout(function() {
