@@ -1268,12 +1268,6 @@ document.addEventListener('click', function (e) {
 customUIKeyInput.addEventListener('keydown', (e)=> {
     let k = document.querySelector('.selectedInputKey');
 
-    // if there was already a value for this key, remove it from all levels
-    if(k.children[0].innerHTML != '_') {
-        removeKeyFromLevels(k);
-    }
-
-
     // if key entered is not shift, control, space, caps, enter, backspace, escape, 
     // or delete, left or right arrows, update dom element and key mapping value
     if (/*e.keyCode != 16*/ e.key !== "Shift" &&
@@ -1290,6 +1284,9 @@ customUIKeyInput.addEventListener('keydown', (e)=> {
         /*e.keyCode != 40*/ e.key !== "ArrowDown") {
         // let currentUILev = document.querySelector('.currentCustomUILevel').innerHTML;
         let currentUILev = document.querySelector('.currentCustomLevel').getAttribute('data-level');
+        if(k.children[0].innerHTML != '_') {
+            removeKeyFromLevels(k);
+        }
         k.children[0].innerHTML = e.key;
     
         // // if we are not already on shift layer, add to dom element shift layer
@@ -1325,16 +1322,12 @@ customUIKeyInput.addEventListener('keydown', (e)=> {
                /*e.keyCode == 46*/ e.key === "Delete" ) {
         // switchSelectedInputKey('left');
         // if backspace, remove letter from the ui element and the keyboard map
-        k.children[0].innerHTML = '_';
-        k.classList.remove('active');
-        layoutMaps.custom.shiftLayer[k.id] = ' ';
-
-        // remove deleted letter from keymapping and levels
         if(k.id){
             //console.log('key added to mapping ' + e.key);
-            layoutMaps.custom[k.id] = ' ';
             removeKeyFromLevels(k);
         }
+        k.children[0].innerHTML = '_';
+        k.classList.remove('active');
     }else if (/*e.keyCode == 37*/ e.key === "ArrowLeft") {
         switchSelectedInputKey('left');
     }else if (/*e.keyCode == 39*/ e.key === "ArrowRight") {
@@ -1354,12 +1347,16 @@ customUIKeyInput.addEventListener('keydown', (e)=> {
 
 // given a key object, k, remove a value of the letter on k from all levels
 function removeKeyFromLevels(k) {
-    let lvls = Object.keys(levelDictionaries['custom']);
-    for(lvl of lvls) {
-        let keyCode = k.id.toString().replace('custom','');
+    const keyCode = k.id.toString().replace('custom','').replace('shift','');
+    const keyValue = k.children[0].innerHTML;
+    const lvls = Object.keys(levelDictionaries['custom']);
+
+    for(const lvl of lvls) {
         //console.log(levelDictionaries.custom.lvl[keyCode]);
         // replace any instances of letter previously found on key
-        levelDictionaries['custom'][lvl] = levelDictionaries['custom'][lvl].replace(k.children[0].innerHTML, '');
+        if (keyValue != '_' && keyValue != '') {
+            levelDictionaries['custom'][lvl] = levelDictionaries['custom'][lvl].replace(keyValue, '');
+        }
         // replace mapping for letter previously found on key
         layoutMaps['custom'][keyCode] = ' ';
     }
