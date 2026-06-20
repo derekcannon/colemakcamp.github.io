@@ -63,6 +63,64 @@ function getInitialKeyboard() {
     return localStorage.getItem('currentKeyboard') || 'ansi';
 }
 
+function parseMappingValue(value) {
+    if (value === null) {
+        return '';
+    }
+
+    const normalized = value.toLowerCase();
+
+    if (normalized === 'on' || normalized === 'true' || normalized === '1') {
+        return true;
+    }
+
+    if (normalized === 'off' || normalized === 'false' || normalized === '0') {
+        return false;
+    }
+
+    return '';
+}
+
+function getURLMapping() {
+    const params = new URLSearchParams(window.location.search);
+
+    return parseMappingValue(params.get('mapping'));
+}
+
+function setURLMapping(value) {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('mapping', value ? 'on' : 'off');
+    window.history.replaceState({}, '', url);
+}
+
+function getInitialKeyRemapping() {
+    const urlMapping = getURLMapping();
+
+    if (urlMapping !== '') {
+        return urlMapping;
+    }
+
+    return localStorage.getItem('keyRemapping') === 'true';
+}
+
+function isKeyRemappingEnabled() {
+    return currentKeyRemapping;
+}
+
+function setKeyRemapping(value, persist) {
+    currentKeyRemapping = value;
+    mappingStatusButton.setAttribute('data-value', value ? 'on' : 'off');
+    setURLMapping(value);
+
+    if (persist) {
+        localStorage.setItem('keyRemapping', value);
+    }
+}
+
 // the string of text that shows the words for the user to type
 let prompt = document.querySelector('.prompt'),
     wordChain = document.querySelector('#wordChain'),
@@ -136,6 +194,8 @@ let specialKeys = ["Pause", "ScrollLock", "Insert", "PageUp", "PageDown", "Delet
     initialCustomKeyboardState = '', // saves a temporary copy of a keyboard layout that a user can return to by discarding changes
     initialCustomLevelsState = ''; // saves a temporary copy of custom levels that a user can return to by discarding changes
 
+let currentKeyRemapping = getInitialKeyRemapping();
+
 // menu config containers
 let preferenceButton = document.querySelector('.settings'),
     capitalLettersAllowed = document.querySelector('.capitalLettersAllowed'),
@@ -176,9 +236,7 @@ function start() {
     }
 
     // if true, user keyboard input will be mapped to the chosen layout. No mapping otherwise
-    if (localStorage.getItem('keyRemapping') === 'true') {
-        mappingStatusButton.setAttribute('data-value','on');
-    }
+    setKeyRemapping(currentKeyRemapping, false);
 
     //layout.value = currentLayout;
     layout.setAttribute('data-value', currentLayout);

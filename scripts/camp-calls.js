@@ -148,13 +148,7 @@ document.addEventListener('click', function(event) {
         keymapping = document.getElementById('keymapping');
     
     if (target === keymapping || keymapping.contains(target)) {
-        if (localStorage.getItem('keyRemapping') === 'true') {
-            localStorage.setItem('keyRemapping', false);
-            keymapping.setAttribute('data-value','off');
-        } else {
-            localStorage.setItem('keyRemapping', true);
-            keymapping.setAttribute('data-value','on');
-        }
+        setKeyRemapping(!isKeyRemappingEnabled(), true);
         // Clear input field when toggled
         // Disabling and enabling the observer ensures that no click sound is made
         fakeObserver.disconnect();

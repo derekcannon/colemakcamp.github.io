@@ -33,7 +33,7 @@ input.addEventListener('keydown', function(e) {
 
         // Regular keydown effect + keymapping
         let char = e.code;
-        if (localStorage.getItem('keyRemapping') === 'true' && char in keyboardMap) {
+        if (isKeyRemappingEnabled() && char in keyboardMap) {
             if (!e.shiftKey) {
                 fakeInput.innerText += processMapping(false, char);
             } else {
@@ -184,7 +184,7 @@ function processUnknown(key) {
                 shift = keysList[key[x]][1];
 
             // Process mapping if required, otherwise simply use the same character
-            if (localStorage.getItem('keyRemapping') === 'true' && char in keyboardMap) {
+            if (isKeyRemappingEnabled() && char in keyboardMap) {
                 print += processMapping(shift, char);
             } else {
                 print += key[x];
