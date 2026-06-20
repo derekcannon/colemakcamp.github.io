@@ -32,6 +32,37 @@ function getInitialLayout() {
     return localStorage.getItem('currentLayout') || 'colemak';
 }
 
+function isValidKeyboard(value) {
+    return Object.prototype.hasOwnProperty.call(customLayout, value);
+}
+
+function getURLKeyboard() {
+    const params = new URLSearchParams(window.location.search);
+    const value = params.get('keyboard');
+
+    return isValidKeyboard(value) ? value : '';
+}
+
+function setURLKeyboard(value) {
+    if (!isValidKeyboard(value) || !window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('keyboard', value);
+    window.history.replaceState({}, '', url);
+}
+
+function getInitialKeyboard() {
+    const urlKeyboard = getURLKeyboard();
+
+    if (urlKeyboard) {
+        return urlKeyboard;
+    }
+
+    return localStorage.getItem('currentKeyboard') || 'ansi';
+}
+
 // the string of text that shows the words for the user to type
 let prompt = document.querySelector('.prompt'),
     wordChain = document.querySelector('#wordChain'),
@@ -79,7 +110,7 @@ let promptOffset = 0,
     keyboardMap = layoutMaps['colemak'],
     letterDictionary = levelDictionaries['colemak'],
     currentLayout = getInitialLayout(),
-    currentKeyboard = localStorage.getItem('currentKeyboard') || 'ansi',
+    currentKeyboard = getInitialKeyboard(),
     shiftDown = false, // tracks whether the shift key is currently being pushed
     fullSentenceMode = false, // if true, all prompts will be replace with sentences
     fullSentenceModeEnabled = localStorage.getItem('fullSentenceModeEnabled') === 'true',
@@ -154,6 +185,7 @@ function start() {
     setURLLayout(currentLayout);
     //keyboard.value = currentKeyboard;
     keyboard.setAttribute('data-value', currentKeyboard);
+    setURLKeyboard(currentKeyboard);
 
     navInit();
 
@@ -808,6 +840,7 @@ function changeKeyboard(value) {
     currentKeyboard = value;
     keyboard.setAttribute('data-value', value);
     localStorage.setItem('currentKeyboard', currentKeyboard);
+    setURLKeyboard(currentKeyboard);
     updateLayoutUI();
     // reset everything
     init();
