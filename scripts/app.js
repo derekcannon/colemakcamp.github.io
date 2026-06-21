@@ -133,8 +133,6 @@ function setKeyRemapping(value, persist) {
 }
 
 const customLayoutURLKeys = [
-    'Backquote', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7',
-    'Digit8', 'Digit9', 'Digit0', 'Minus', 'Equal', 'KeyL1', 'KeyL2', 'KeyL3',
     'KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI', 'KeyO', 'KeyP',
     'KeyR1', 'BracketLeft', 'BracketRight', 'Backslash', 'IntlBackslash', 'KeyA',
     'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'Semicolon',
