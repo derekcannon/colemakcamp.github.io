@@ -118,6 +118,39 @@ function getInitialKeyRemapping() {
     return localStorage.getItem('keyRemapping') === 'true';
 }
 
+function getURLLevel() {
+    const params = new URLSearchParams(window.location.search);
+    const value = Number(params.get('level'));
+
+    return Number.isInteger(value) && value >= 1 && value <= 8 ? value : '';
+}
+
+function setURLLevel(value) {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const level = Number(value);
+
+    if (!Number.isInteger(level) || level < 1 || level > 8) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('level', level);
+    window.history.replaceState({}, '', url);
+}
+
+function getInitialLevel() {
+    const urlLevel = getURLLevel();
+
+    if (urlLevel) {
+        return urlLevel;
+    }
+
+    return localStorage.getItem('currentLevel') || 1;
+}
+
 function isKeyRemappingEnabled() {
     return currentKeyRemapping;
 }
@@ -356,7 +389,7 @@ let promptOffset = 0,
     gameON = false, // set to true when user starts typing in input field
     correct = 0, // number of correct keystrokes during a game
     errors = 0, // number of typing errors during a game
-    currentLevel = localStorage.getItem('currentLevel') || 1, // int representation of the current level, which determines which letter set to test
+    currentLevel = getInitialLevel(), // int representation of the current level, which determines which letter set to test
     correctAnswer, // string representation of the current correct word
     letterIndex = 0, // Keeps track of where in a word the user is; Increment with every keystroke except ' ', return, and backspace; Decrement for backspace, and reset for the other 2
     onlyLower = !localStorage.getItem('onlyLower') || localStorage.getItem('onlyLower') === 'true', // If only lower is true, include only words without capital letters
@@ -424,7 +457,7 @@ function start() {
         toggleWordScrollingModeUI();
     }
 
-    if (fullSentenceModeEnabled) {
+    if (fullSentenceModeEnabled || currentLevel == 8) {
         toggleFullSentenceModeUI();
     }
 
@@ -452,7 +485,7 @@ function start() {
         document.querySelector('.cheatsheet').classList.add('dispose');
     }
 
-    switchLevel(currentLevel);
+    switchLevel(currentLevel, false);
 
     updateLayoutUI();
 }
@@ -1492,8 +1525,11 @@ for (let x = 0; x < buttons.length; x++) {
 }
 
 // switches to level 
-function switchLevel(lev) {
-    localStorage.setItem('currentLevel', lev);
+function switchLevel(lev, persist) {
+    if (persist !== false) {
+        localStorage.setItem('currentLevel', lev);
+    }
+    setURLLevel(lev);
     console.log(lev);
         // stop timer
         gameON = false;
