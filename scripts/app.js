@@ -1,25 +1,54 @@
 /* Set global variables */
 
+function getURLParam(name) {
+    return new URLSearchParams(window.location.search).get(name);
+}
+
+function setURLParams(values) {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+
+    Object.keys(values).forEach((name) => {
+        url.searchParams.set(name, values[name]);
+    });
+
+    window.history.replaceState({}, '', url);
+}
+
+function deleteURLParams(names) {
+    if (!window.history || !window.history.replaceState) {
+        return;
+    }
+
+    const url = new URL(window.location.href);
+
+    names.forEach((name) => {
+        url.searchParams.delete(name);
+    });
+
+    window.history.replaceState({}, '', url);
+}
+
 function isValidLayout(value) {
     return Object.prototype.hasOwnProperty.call(layoutMaps, value) &&
         Object.prototype.hasOwnProperty.call(levelDictionaries, value);
 }
 
 function getURLLayout() {
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get('layout');
+    const value = getURLParam('layout');
 
     return isValidLayout(value) ? value : '';
 }
 
 function setURLLayout(value) {
-    if (!isValidLayout(value) || !window.history || !window.history.replaceState) {
+    if (!isValidLayout(value)) {
         return;
     }
 
-    const url = new URL(window.location.href);
-    url.searchParams.set('layout', value);
-    window.history.replaceState({}, '', url);
+    setURLParams({ layout: value });
 }
 
 function getInitialLayout() {
@@ -41,20 +70,17 @@ function isValidKeyboard(value) {
 }
 
 function getURLKeyboard() {
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get('keyboard');
+    const value = getURLParam('keyboard');
 
     return isValidKeyboard(value) ? value : '';
 }
 
 function setURLKeyboard(value) {
-    if (!isValidKeyboard(value) || !window.history || !window.history.replaceState) {
+    if (!isValidKeyboard(value)) {
         return;
     }
 
-    const url = new URL(window.location.href);
-    url.searchParams.set('keyboard', value);
-    window.history.replaceState({}, '', url);
+    setURLParams({ keyboard: value });
 }
 
 function getInitialKeyboard() {
@@ -93,19 +119,11 @@ function parseMappingValue(value) {
 }
 
 function getURLMapping() {
-    const params = new URLSearchParams(window.location.search);
-
-    return parseMappingValue(params.get('mapping'));
+    return parseMappingValue(getURLParam('mapping'));
 }
 
 function setURLMapping(value) {
-    if (!window.history || !window.history.replaceState) {
-        return;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.set('mapping', value ? 'on' : 'off');
-    window.history.replaceState({}, '', url);
+    setURLParams({ mapping: value ? 'on' : 'off' });
 }
 
 function getInitialKeyRemapping() {
@@ -119,26 +137,19 @@ function getInitialKeyRemapping() {
 }
 
 function getURLLevel() {
-    const params = new URLSearchParams(window.location.search);
-    const value = Number(params.get('level'));
+    const value = Number(getURLParam('level'));
 
     return Number.isInteger(value) && value >= 1 && value <= 8 ? value : '';
 }
 
 function setURLLevel(value) {
-    if (!window.history || !window.history.replaceState) {
-        return;
-    }
-
     const level = Number(value);
 
     if (!Number.isInteger(level) || level < 1 || level > 8) {
         return;
     }
 
-    const url = new URL(window.location.href);
-    url.searchParams.set('level', level);
-    window.history.replaceState({}, '', url);
+    setURLParams({ level });
 }
 
 function getInitialLevel() {
@@ -190,8 +201,7 @@ function getURLCustomLayoutPayload() {
         return urlCustomLayoutPayload;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const value = params.get('custom');
+    const value = getURLParam('custom');
 
     if (!value) {
         urlCustomLayoutPayload = null;
@@ -326,26 +336,16 @@ function createCustomLayoutPayload(keyboardValue) {
 }
 
 function setURLCustomLayout() {
-    if (!window.history || !window.history.replaceState) {
-        return;
-    }
-
     const payload = createCustomLayoutPayload(currentKeyboard);
-    const url = new URL(window.location.href);
-    url.searchParams.set('layout', 'custom');
-    url.searchParams.set('keyboard', payload.kb);
-    url.searchParams.set('custom', 'v1:' + encodeBase64URL(JSON.stringify(payload)));
-    window.history.replaceState({}, '', url);
+    setURLParams({
+        layout: 'custom',
+        keyboard: payload.kb,
+        custom: 'v1:' + encodeBase64URL(JSON.stringify(payload))
+    });
 }
 
 function clearURLCustomLayout() {
-    if (!window.history || !window.history.replaceState) {
-        return;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete('custom');
-    window.history.replaceState({}, '', url);
+    deleteURLParams(['custom']);
 }
 
 const customLayoutLoadedFromURL = applyURLCustomLayout();
